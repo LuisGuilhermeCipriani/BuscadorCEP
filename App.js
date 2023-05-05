@@ -1,14 +1,35 @@
 import React, { useState, useEffect, useRef } from "react";
-import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, SafeAreaView, StatusBar } from "react-native";
+import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, SafeAreaView, StatusBar, Keyboard } from "react-native";
 
 import api from './src/services/api';
 
 export default function App() {
 
   const [CEP, setCEP] = useState('');
+  const [informacoes, setInformacoes] = useState('');
+  const inputRef = useRef(null);
 
-  function buscaCEP() {
+    async function buscarCEP() {
+      if (CEP === '') {
+        Alert.alert('Atenção!', 'Por favor, informe um CEP');
+        inputRef.current.focus();
+        return;
+      }
 
+      try {
+        const response = await api.get(`/${CEP}/json/`);
+        setInformacoes(response.data);
+        Keyboard.dismiss();
+      } catch {
+        Alert.alert('Atenção!', 'Erro ao buscar este CEP');
+        limparCEP();
+      }
+    }
+
+  function limparCEP() {
+    setCEP('');
+    setInformacoes('');
+    inputRef.current.focus();
   }
 
   return (
@@ -21,28 +42,35 @@ export default function App() {
             placeholder="Ex: 01001000"
             value={CEP}
             keyboardType="numeric"
-            onChangeText={buscaCEP}
+            onChangeText={(texto) => setCEP(texto)}
             style={styles.input}
+            ref={inputRef}
           />
         </View>
         <View style={styles.botoes}>
-          <TouchableOpacity style={[styles.botao, style = { backgroundColor: '#3333ff', marginRight: 20 }]}>
+          <TouchableOpacity
+            style={[styles.botao, style = { backgroundColor: '#3333ff', marginRight: 20 }]}
+            onPress={buscarCEP}
+          >
             <Text style={styles.textoBotao}>Buscar</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.botao, style = { backgroundColor: '#ff3333', marginLeft: 20 }]}>
+          <TouchableOpacity
+            style={[styles.botao, style = { backgroundColor: '#ff3333', marginLeft: 20 }]}
+            onPress={limparCEP}
+          >
             <Text style={styles.textoBotao}>Limpar</Text>
           </TouchableOpacity>
         </View>
       </View>
       {CEP &&
         <View style={styles.inferior}>
-          <Text style={styles.textoSaida}>CEP: </Text>
-          <Text style={styles.textoSaida}>Logradouro: </Text>
-          <Text style={styles.textoSaida}>Complemento: </Text>
-          <Text style={styles.textoSaida}>Bairro: </Text>
-          <Text style={styles.textoSaida}>Localidade: </Text>
-          <Text style={styles.textoSaida}>UF: </Text>
+          <Text style={styles.textoSaida}>CEP: {informacoes.cep}</Text>
+          <Text style={styles.textoSaida}>Logradouro: {informacoes.logradouro}</Text>
+          <Text style={styles.textoSaida}>Complemento: {informacoes.complemento}</Text>
+          <Text style={styles.textoSaida}>Bairro: {informacoes.bairro}</Text>
+          <Text style={styles.textoSaida}>Localidade: {informacoes.localidade}</Text>
+          <Text style={styles.textoSaida}>UF: {informacoes.uf}</Text>
         </View>
       }
     </SafeAreaView>
